@@ -168,6 +168,14 @@ location ^~ /nextcloud {
 	gzip_min_length 256;
 	gzip_proxied expired no-cache no-store private no_last_modified no_etag auth;
 	gzip_types application/atom+xml application/javascript application/json application/ld+json application/manifest+json application/rss+xml application/vnd.geo+json application/vnd.ms-fontobject application/wasm application/x-font-ttf application/x-web-app-manifest+json application/xhtml+xml application/xml font/opentype image/bmp image/svg+xml image/x-icon text/cache-manifest text/css text/plain text/vcard text/vnd.rim.location.xloc text/vtt text/x-component text/x-cross-domain-policy;
+	  add_header Referrer-Policy                      "no-referrer"   always;
+	add_header X-Content-Type-Options               "nosniff"       always;
+	add_header X-Download-Options                   "noopen"        always;
+	add_header X-Frame-Options                      "SAMEORIGIN"    always;
+	add_header X-Permitted-Cross-Domain-Policies    "none"          always;
+	add_header X-Robots-Tag                         "none"          always;
+	add_header X-XSS-Protection                     "1; mode=block" always;
+	add_header Strict-Transport-Security			"15552000"		always;
     # The settings allows you to optimize the HTTP2 bandwitdth.
 	# See https://blog.cloudflare.com/delivering-http-2-upload-speed-improvements/
 	# for tunning hints
