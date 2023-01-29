@@ -175,7 +175,7 @@ location ^~ /nextcloud {
 	add_header X-Permitted-Cross-Domain-Policies    "none"          always;
 	add_header X-Robots-Tag                         "none"          always;
 	add_header X-XSS-Protection                     "1; mode=block" always;
-	add_header Strict-Transport-Security			"15552000"		always;
+	add_header Strict-Transport-Security		"15552000"	always;
     # The settings allows you to optimize the HTTP2 bandwitdth.
 	# See https://blog.cloudflare.com/delivering-http-2-upload-speed-improvements/
 	# for tunning hints
