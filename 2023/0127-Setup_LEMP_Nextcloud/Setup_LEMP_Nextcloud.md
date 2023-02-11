@@ -114,12 +114,18 @@ After saving and exiting the file, use the command "systemctl restart nginx" to 
 
 We also need to install PHP packages to allow Nginx to properly interpret PHP files. You can use <pre><code>apt install php-fpm</code></pre> in the apt repository to install PHP packages. After installation, some files need to be modified to make it more suitable for running Nextcloud. The directory <pre><code>/etc/php/7.4/fpm/php.ini</code></pre> should be modified, please note that the directory 7.4 is your php version. If your version is different from mine, please change it. Modify the following items <pre><code>cgi.fix_pathinfo=0
 memory_limit = 512M
-listen.mode = 0660</code></pre> and in the file <pre><code>/etc/php/7.4/fpm/pool.d/www.conf</code></pre> modify the following items <code><pre>listen.mode = 0660
+listen.mode = 0660
+opcache.interned_strings_buffer=8</code></pre> and in the file <pre><code>/etc/php/7.4/fpm/pool.d/www.conf</code></pre> modify the following items <code><pre>listen.mode = 0660
 pm.max_children = 20
 pm.start_servers = 4
 pm.min_spare_servers = 2
 pm.max_spare_servers = 8
-clear_env = no</code></pre> Then restart php-fpm to make the new configuration file effective, use <pre><code>systemctl restart php7.4-fpm</code></pre>
+clear_env = no
+env[HOSTNAME] = $HOSTNAME
+env[PATH] = /usr/local/bin:/usr/bin:/bin
+env[TMP] = /tmp
+env[TMPDIR] = /tmp
+env[TEMP] = /tmp</code></pre> Then restart php-fpm to make the new configuration file effective, use <pre><code>systemctl restart php7.4-fpm</code></pre>
 
 ***
 
@@ -233,5 +239,7 @@ location ^~ /nextcloud {
 		try_files $uri $uri/ /nextcloud/index.php$request_uri;
 	}
 }</code></pre> and then restart Nginx using the command <pre><code>systemctl restart nginx</code></pre>
+
+Next, you will need to modify the Nextcloud settings by adding the following content <pre><code>'default_phone_region' => 'TW',</code></pre> to the path "/var/www/html/nextcloud/config/config.php)", where TW should be replaced with your country code. The code can be referred to [ISO 3166-1 alpha-2](https://en.wikipedia.org/wiki/ISO_3166-1_alpha-2#Officially_assigned_code_elements).
 
 With this, everything you have installed should be working properly. I am glad you have reached this point. This is my first article and also my first tutorial. I hope my teaching method will allow you to learn how to operate, rather than being too complex. The internet is a constantly evolving place, and I do not mind receiving any feedback from anyone. Perhaps you have a better method that is more convenient or secure, etc. I welcome your rational discussion and guidance. Humans progress through constant discussions and exchanges. I also welcome any corrections to my grammar or description errors. My English is not very good, and some parts of this article were completed using translation. If you have misunderstood something in the article, I apologize. Thank you again for reading this article. Let's improve together and have a great day!
