@@ -56,6 +56,10 @@ Bantime is used to set the duration of time that an IP address is blocked for ea
 
 After modifying the configuration of fail2ban, remember to use the command <pre><code>systemctl restart fail2ban</code></pre> to restart the service. You can also use the command <pre><code>fail2ban-client status</code></pre> to check the current rules in operation.
 
+If you encounter <pre><code>ERROR Failed during configuration: Have not found any log file for sshd jail</code></pre>
+
+Please change the following code <pre><code>backend = auto</code></pre> change to <pre><code>backend = systemd</code></pre>
+
 ***
 
 ## Install Nginx
