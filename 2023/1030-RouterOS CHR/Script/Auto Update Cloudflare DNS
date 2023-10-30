@@ -1,0 +1,99 @@
+################# CloudFlare variables #################
+# Is debug mode enabled? / 是否開啟調試模式?
+:local CFDebug "true"
+
+# Interface name with public IP / 有外網IP的接口名稱
+:local WANInterface "pppoe-out1"
+
+# You're updating the domain for DNS. If it's a subdomain, enter the complete subdomain here. / 你要更新DNS的域名。若是二級域名，這裡填寫完整的二級域名
+:local CFdomain "test.example.com"
+
+# Enter your CloudFlare email address. / 輸入你的CloudFlare信箱地址
+:local CFemail "example@gmail.com"
+
+# Is CloudFlare Proxy enabled? / 是否啟用CloudFlare Proxy
+:local CFproxied "true"
+
+# Cloudflare has permission to manage domain 'API Tokens'. / CloudFlare 有權限操作域名的"API Tokens"
+:local CFtkn "example"
+
+# Domain zoneId / 域名zoneId
+:local CFzoneid "example"
+
+# The record ID to update the domain's DNS. / 要更新域名DNS的record id
+:local CFid "example"
+
+# RecordType
+:local CFrecordType "A"
+
+# Temporary IP file name / 暫存IP檔案名稱
+:local CFfilename "IP-test.example.com"
+
+#########################################################################
+#################  Do not modify the content below. #####################
+#########################################################################
+
+:if ($CFDebug = "true") do={
+	:log info "The process of updating DNS records for $CFdomain has started..."
+};
+
+################# variables #################
+:local previousIP ""
+
+################# Constructing CloudFlare API Url (v4) #################
+:local CFurl "https://api.cloudflare.com/client/v4/zones/"
+:set CFurl ($CFurl . "$CFzoneid/dns_records/$CFid")
+
+################# Get or set previous IP variable. #################
+:local currentIP [/ip address get [/ip address find interface=$WANInterface ] address]
+:local WANip [:pick $currentIP 0 [:find $currentIP "/"]]
+
+:if ([/file find name=$CFfilename] = "") do={
+	:if ($CFDebug = "true") do={
+		:log error "No record found for the previous public IP address, creating it automatically..."
+	};
+    :set previousIP $WANip
+    :execute script=":put $WANip" file="$CFfilename"
+	:if ($CFDebug = "true") do={
+		:log info ("CloudFlare: Start updating DNS records, setting $CFdomain = $WANip.")
+	};
+    /tool fetch mode=https http-method=put url="$CFurl" http-header-field="content-type:application/json,X-Auth-Email:$CFemail,Authorization:$CFtkn" http-data="{\"type\":\"$CFrecordType\",\"name\":\"$CFdomain\",\"content\":\"$WANip\",\"proxied\":$CFproxied}" output=none
+} else={
+    :if ( [/file get [/file find name=$CFfilename] size] > 0 ) do={ 
+    :local content [/file get [/file find name="$CFfilename"] contents]
+    :local contentLen [ :len $content ]
+    :local lineEnd 0
+    :local line ""
+    :local lastEnd 0
+            :set lineEnd [:find $content "\n" $lastEnd ]
+            :set line [:pick $content $lastEnd $lineEnd]
+            :set lastEnd ( $lineEnd + 1 )
+            :if ( [:pick $line 0 1] != "#" ) do={
+                :set previousIP [:pick $line 0 $lineEnd ]
+                :set previousIP [:pick $previousIP 0 [:find $previousIP "\r"]]
+            }
+    }
+}
+
+######## Write debugging information to the log. #################
+:if ($CFDebug = "true") do={
+    :log info ("CloudFlare: Domain = $CFdomain")
+    :log info ("CloudFlare: Previous resolved IP address = $previousIP")
+    :log info ("CloudFlare: Current IP address = $currentIP")
+    :log info ("CloudFlare: Public IP = $WANip")
+};
+
+######## Compare and update records. #####
+:if ($previousIP != $WANip) do={
+    :log info ("CloudFlare: Start updating DNS records, setting $CFdomain = $WANip")
+    /tool fetch mode=https http-method=put url="$CFurl" http-header-field="content-type:application/json,X-Auth-Email:$CFemail,Authorization:$CFtkn" http-data="{\"type\":\"$CFrecordType\",\"name\":\"$CFdomain\",\"content\":\"$WANip\",\"proxied\":$CFproxied}" output=none
+    /ip dns cache flush
+    :if ( [/file get [/file find name=$CFfilename] size] > 0 ) do={
+        /file remove $CFfilename
+        :execute script=":put $WANip" file="$CFfilename"
+    }
+} else={
+	:if ($CFDebug = "true") do={
+		:log info "CloudFlare: No changes occurred, no update needed!"
+	}
+}
